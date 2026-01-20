@@ -1,21 +1,20 @@
 package com.example.musicplayer.presentation.navigation
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.musicplayer.presentation.screens.MiniPlayer
+import com.example.musicplayer.presentation.screens.PlayerScreen
 import com.example.musicplayer.presentation.screens.SearchScreen
-import com.example.musicplayer.viewmodel.PlayerViewModel
+import com.example.musicplayer.viewmodel.MusicPlayerViewModel
 import com.example.musicplayer.viewmodel.SearchViewModel
 
 @Composable
 fun AppNavigation(
-    searchViewModel: SearchViewModel,
-    playerViewModel: PlayerViewModel
+    searchViewModel: SearchViewModel = hiltViewModel(),
+    playerViewModel: MusicPlayerViewModel = hiltViewModel()
 ) {
-
     val navController = rememberNavController()
 
     NavHost(
@@ -23,10 +22,22 @@ fun AppNavigation(
         startDestination = "search"
     ) {
         composable("search") {
-            Column {
-                SearchScreen(searchViewModel, playerViewModel)
-                MiniPlayer(playerViewModel)
-            }
+            SearchScreen(
+                searchViewModel = searchViewModel,
+                playerViewModel = playerViewModel,
+                onNavigateToPlayer = {
+                    navController.navigate("player")
+                }
+            )
+        }
+
+        composable("player") {
+            PlayerScreen(
+                playerViewModel = playerViewModel,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }

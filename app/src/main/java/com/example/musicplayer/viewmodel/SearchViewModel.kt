@@ -24,20 +24,34 @@ class SearchViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    private val _noResults = MutableStateFlow(false)
+    val noResults: StateFlow<Boolean> = _noResults
+
     fun search(query: String) {
+        if (query.isBlank()) {
+            _error.value = "Please enter a search term"
+            return
+        }
+
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
 
-            val result = repository.searchSongs(query)
+            try {
+                val result = repository.searchSongs(query)
 
-            result.onSuccess {
-                _songs.value = it
-            }.onFailure {
-                _error.value = it.message
+                result.onSuccess { list ->
+                    _songs.value = list
+                    _noResults.value = list.isEmpty()
+                }.onFailure {
+                    _error.value = it.message ?: "Unknown error occurred"
+                    _noResults.value = false
+                }
+
+            } finally {
+                _isLoading.value = false
             }
 
-            _isLoading.value = false
         }
     }
 }
