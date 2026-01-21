@@ -1,6 +1,7 @@
 package com.example.musicplayer.data.repository
 
 import com.example.musicplayer.data.api.SaavnApi
+import com.example.musicplayer.data.model.Album
 import com.example.musicplayer.data.model.Song
 import javax.inject.Inject
 
@@ -39,6 +40,36 @@ class MusicRepository @Inject constructor(
 
             if (!match) return@mapNotNull null
 
+            val streamUrl = apiSong.downloadUrl
+                .firstOrNull { it.quality == "160kbps" }
+                ?.url ?: return@mapNotNull null
+
+            Song(
+                id = apiSong.id,
+                name = apiSong.name,
+                artists = apiSong.artists.primary.joinToString(", ") { it.name },
+                duration = apiSong.duration ?: 0,
+                imageUrl = apiSong.image.lastOrNull()?.url.orEmpty(),
+                streamUrl = streamUrl
+            )
+        }
+    }
+
+    suspend fun searchAlbums(query: String): List<Album> {
+        val response = api.searchAlbums(query)
+        return response.data.results.map { apiAlbum ->
+            Album(
+                id = apiAlbum.id,
+                name = apiAlbum.name,
+                imageUrl = apiAlbum.image.lastOrNull()?.url.orEmpty()
+            )
+        }
+    }
+
+    suspend fun getSongsByAlbumName(albumName: String): List<Song> {
+        val response = api.searchSongs(albumName, limit = 50)
+
+        return response.data.results.mapNotNull { apiSong ->
             val streamUrl = apiSong.downloadUrl
                 .firstOrNull { it.quality == "160kbps" }
                 ?.url ?: return@mapNotNull null

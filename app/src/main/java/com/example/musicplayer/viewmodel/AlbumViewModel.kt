@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class ArtistViewModel @Inject constructor(
+class AlbumViewModel @Inject constructor(
     private val repository: MusicRepository
 ) : ViewModel() {
 
@@ -24,14 +24,14 @@ class ArtistViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
-    fun loadArtist(artistName: String) {
+    fun loadAlbum(albumName: String) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 _errorMessage.value = null
-                _songs.value = repository.getSongsByArtistName(artistName)
+                _songs.value = repository.getSongsByAlbumName(albumName)
             } catch (e: Exception) {
-                _errorMessage.value = "Failed to load artist songs: ${e.message}"
+                _errorMessage.value = "Failed to load album songs: ${e.message}"
                 _songs.value = emptyList()
             } finally {
                 _isLoading.value = false

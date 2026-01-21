@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    kotlin("plugin.serialization") version "1.9.20"
 }
 
 android {
@@ -81,13 +82,26 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
-    // Media3 ExoPlayer
-    implementation("androidx.media3:media3-exoplayer:1.2.0")
-    implementation("androidx.media3:media3-ui:1.2.0")
-    implementation("androidx.media3:media3-session:1.2.0")
+    // Media3 (use same version for all)
+    implementation("androidx.media3:media3-exoplayer:1.3.1")
+    implementation("androidx.media3:media3-ui:1.3.1")
+    implementation("androidx.media3:media3-session:1.3.1")
+
+    // AndroidX Media for notification MediaStyle
+    implementation("androidx.media:media:1.7.0")
+
 
     // Coil
     implementation("io.coil-kt:coil-compose:2.4.0")
+
+    // DataStore for queue persistence
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    // Kotlinx Serialization for queue storage
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+
+    // Drag-to-reorder for queue reordering
+    implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
 
     // Testing
     testImplementation(libs.junit)

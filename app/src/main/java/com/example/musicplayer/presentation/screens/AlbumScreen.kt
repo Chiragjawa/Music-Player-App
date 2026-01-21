@@ -13,13 +13,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.musicplayer.data.model.Song
 import com.example.musicplayer.presentation.components.SongItem
-import com.example.musicplayer.presentation.viewmodel.ArtistViewModel
+import com.example.musicplayer.presentation.viewmodel.AlbumViewModel
 
 @Composable
-fun ArtistScreen(
-    artistName: String,
+fun AlbumScreen(
+    albumName: String,
     onPlaySong: (Song, List<Song>) -> Unit,
-    viewModel: ArtistViewModel = hiltViewModel()
+    viewModel: AlbumViewModel = hiltViewModel()
 ) {
     val songs by viewModel.songs.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
@@ -27,8 +27,8 @@ fun ArtistScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(artistName) {
-        viewModel.loadArtist(artistName)
+    LaunchedEffect(albumName) {
+        viewModel.loadAlbum(albumName)
     }
 
     LaunchedEffect(errorMessage) {
@@ -61,7 +61,7 @@ fun ArtistScreen(
             ) {
                 item {
                     Text(
-                        text = artistName,
+                        text = albumName,
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )

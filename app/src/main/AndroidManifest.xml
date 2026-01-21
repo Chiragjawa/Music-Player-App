@@ -40,7 +40,7 @@
 
         <!-- Media Session Service for background playback -->
         <service
-            android:name="androidx.media3.session.MediaSessionService"
+            android:name=".service.MusicPlaybackService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="true">
             <intent-filter>

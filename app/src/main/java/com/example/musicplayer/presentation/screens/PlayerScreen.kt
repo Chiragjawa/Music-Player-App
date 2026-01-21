@@ -26,7 +26,8 @@ import java.util.Locale
 @Composable
 fun PlayerScreen(
     playerViewModel: MusicPlayerViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToQueue: () -> Unit = {}
 ) {
     val playerState by playerViewModel.playerState.collectAsState()
     val song = playerState.currentSong
@@ -68,6 +69,17 @@ fun PlayerScreen(
                             contentDescription = "Back",
                             tint = Color.White,
                             modifier = Modifier.size(32.dp)
+                        )
+                    }
+                },
+                actions = {
+                    // Queue button
+                    IconButton(onClick = onNavigateToQueue) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.List,
+                            contentDescription = "Queue",
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 },
@@ -229,42 +241,15 @@ fun PlayerScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Queue Info
+            // Queue position indicator
             if (playerState.queue.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF1E1E1E)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                "Queue",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                            Text(
-                                "${playerState.currentIndex + 1} of ${playerState.queue.size}",
-                                color = Color(0xFFB3B3B3),
-                                fontSize = 12.sp
-                            )
-                        }
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.List,
-                            contentDescription = "Queue",
-                            tint = Color(0xFF1DB954)
-                        )
-                    }
-                }
+                Text(
+                    text = "Track ${playerState.currentIndex + 1} of ${playerState.queue.size}",
+                    color = Color(0xFFB3B3B3),
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

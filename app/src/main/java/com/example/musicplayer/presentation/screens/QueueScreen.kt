@@ -24,14 +24,21 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.musicplayer.data.model.Song
 import com.example.musicplayer.viewmodel.MusicPlayerViewModel
+import org.burnoutcrew.reorderable.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QueueScreen(
     playerViewModel: MusicPlayerViewModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onReorder: (fromIndex: Int, toIndex: Int) -> Unit = { _, _ -> }
 ) {
     val playerState by playerViewModel.playerState.collectAsState()
+    val reorderableState = rememberReorderableLazyListState(
+        onMove = { from, to ->
+            playerViewModel.reorderQueue(from.index, to.index)
+        }
+    )
 
     Scaffold(
         topBar = {
@@ -74,18 +81,27 @@ fun QueueScreen(
             }
         } else {
             LazyColumn(
+                state = reorderableState.listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .reorderable(reorderableState),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                itemsIndexed(playerState.queue) { index, song ->
-                    QueueItem(
-                        song = song,
-                        isCurrentSong = index == playerState.currentIndex,
-                        onRemove = { playerViewModel.removeFromQueue(song) }
-                    )
+                itemsIndexed(
+                    items = playerState.queue,
+                    key = { _, song -> song.id }
+                ) { index, song ->
+                    ReorderableItem(reorderableState, key = song.id) { isDragging ->
+                        QueueItem(
+                            song = song,
+                            isCurrentSong = index == playerState.currentIndex,
+                            onRemove = { playerViewModel.removeFromQueue(song) },
+                            reorderableState = reorderableState,
+                            isDragging = isDragging
+                        )
+                    }
                 }
             }
         }
@@ -96,13 +112,20 @@ fun QueueScreen(
 fun QueueItem(
     song: Song,
     isCurrentSong: Boolean,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    reorderableState: ReorderableLazyListState,
+    isDragging: Boolean
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .detectReorderAfterLongPress(reorderableState),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isCurrentSong) Color(0xFF1E3A1E) else Color(0xFF1E1E1E)
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isDragging) 8.dp else 2.dp
         )
     ) {
         Row(

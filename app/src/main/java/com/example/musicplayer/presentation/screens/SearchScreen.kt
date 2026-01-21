@@ -27,6 +27,7 @@ enum class SearchTab { SUGGESTED, SONGS, ARTISTS, ALBUMS }
 @Composable
 fun SearchScreen(
     onNavigateToArtist: (String) -> Unit,
+    onNavigateToAlbum: (String) -> Unit,
     onPlaySong: (Song, List<Song>) -> Unit,
     viewModel: SearchViewModel = hiltViewModel()
 ) {
@@ -38,8 +39,22 @@ fun SearchScreen(
     val randomSongs by viewModel.randomSongs.collectAsState()
     val artistResults by viewModel.artistResults.collectAsState()
     val albumResults by viewModel.albumResults.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            snackbarHostState.showSnackbar(
+                message = it,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.clearError()
+        }
+    }
 
     fun performSearch() {
         if (query.isBlank()) return
@@ -53,20 +68,24 @@ fun SearchScreen(
         keyboardController?.hide()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+        ) {
 
-        // Title
-        Text(
-            text = "MyPlay",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
+            // Title
+            Text(
+                text = "MyPlay",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
 
-        Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(12.dp))
 
         // Tabs
         Row {
@@ -113,13 +132,22 @@ fun SearchScreen(
             Spacer(Modifier.height(16.dp))
         }
 
-        // Content
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 96.dp)
-        ) {
+        // Loading indicator
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            // Content
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 96.dp)
+            ) {
 
-            when (selectedTab) {
+                when (selectedTab) {
 
                 SearchTab.SUGGESTED -> {
                     items(randomSongs, key = { it.id }) { song ->
@@ -163,18 +191,20 @@ fun SearchScreen(
 
                 SearchTab.ALBUMS -> {
                     if (albumResults.isNotEmpty()) {
-                        items(albumResults, key = { it }) { album ->
-                            Text(
-                                text = album,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(12.dp)
+                        items(albumResults, key = { it.id }) { album ->
+                            AlbumResultCard(
+                                name = album.name,
+                                onClick = { onNavigateToAlbum(album.name) }
                             )
+                            Spacer(Modifier.height(8.dp))
                         }
                     } else if (query.isNotBlank()) {
                         item { NoResult() }
                     }
                 }
             }
+            }
+        }
         }
     }
 }
@@ -196,6 +226,27 @@ private fun ArtistResultCard(
             Text(name, fontWeight = FontWeight.Bold)
             Spacer(Modifier.weight(1f))
             Text("Artist", color = Color.Gray)
+        }
+    }
+}
+
+@Composable
+private fun AlbumResultCard(
+    name: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(name, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.weight(1f))
+            Text("Album", color = Color.Gray)
         }
     }
 }
