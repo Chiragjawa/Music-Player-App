@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class SearchViewModel @Inject constructor(
+class ArtistViewModel @Inject constructor(
     private val repository: MusicRepository
 ) : ViewModel() {
 
@@ -25,51 +25,37 @@ class SearchViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    private val _noResults = MutableStateFlow(false)
-    val noResults: StateFlow<Boolean> = _noResults.asStateFlow()
+    private val _artistName = MutableStateFlow("")
+    val artistName: StateFlow<String> = _artistName.asStateFlow()
 
-    private val _lastQuery = MutableStateFlow("")
-    val lastQuery: StateFlow<String> = _lastQuery.asStateFlow()
-
-    fun search(query: String) {
-        val trimmedQuery = query.trim()
-
-        if (trimmedQuery.isBlank()) {
-            clearSearch()
-            return
-        }
-
-        // Don't search if same query
-        if (trimmedQuery == _lastQuery.value && _songs.value.isNotEmpty()) {
-            return
-        }
+    /**
+     * Load artist songs using the dedicated artist API
+     */
+    fun loadArtistSongs(artistQuery: String) {
+        if (artistQuery.isBlank()) return
 
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
-            _noResults.value = false
-            _lastQuery.value = trimmedQuery
 
             try {
-                val result = repository.searchSongs(trimmedQuery)
+                val result = repository.searchArtistWithSongs(artistQuery)
 
-                result.onSuccess { songList ->
+                result.onSuccess { (name, songList) ->
+                    _artistName.value = name
                     _songs.value = songList
-                    _noResults.value = songList.isEmpty()
 
                     if (songList.isEmpty()) {
-                        _error.value = null // Clear error when no results
+                        _error.value = "No songs found for this artist"
                     }
                 }.onFailure { exception ->
-                    _error.value = exception.message ?: "Search failed"
+                    _error.value = exception.message ?: "Failed to load artist"
                     _songs.value = emptyList()
-                    _noResults.value = false
                 }
 
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error occurred"
                 _songs.value = emptyList()
-                _noResults.value = false
             } finally {
                 _isLoading.value = false
             }
@@ -77,19 +63,11 @@ class SearchViewModel @Inject constructor(
     }
 
     /**
-     * Clear all search results and state
+     * Clear data when leaving artist screen
      */
-    fun clearSearch() {
+    fun clearData() {
         _songs.value = emptyList()
-        _error.value = null
-        _noResults.value = false
-        _lastQuery.value = ""
-    }
-
-    /**
-     * Reset error state
-     */
-    fun clearError() {
+        _artistName.value = ""
         _error.value = null
     }
 }
