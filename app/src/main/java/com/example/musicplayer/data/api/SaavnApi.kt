@@ -7,59 +7,63 @@ import retrofit2.http.Query
 
 interface SaavnApi {
 
-    /* ---------------- SEARCH ---------------- */
-
+    // SEARCH
     @GET("search/songs")
     suspend fun searchSongs(
         @Query("query") query: String,
         @Query("limit") limit: Int = 20
-    ): SearchResponse
+    ): SearchSongsResponse
 
     @GET("search/albums")
     suspend fun searchAlbums(
-        @Query("query") query: String,
-        @Query("limit") limit: Int = 20
-    ): AlbumSearchResponse
+        @Query("query") query: String
+    ): SearchAlbumsResponse
 
     @GET("search/playlists")
     suspend fun searchPlaylists(
-        @Query("query") query: String,
-        @Query("limit") limit: Int = 20
-    ): PlaylistSearchResponse
+        @Query("query") query: String
+    ): SearchPlaylistsResponse
 
-    /* ---------------- SONG ---------------- */
+
+    // SONGS
+    @GET("songs")
+    suspend fun getSongById(
+        @Query("id") id: String
+    ): SongDetailResponse
 
     @GET("songs/{id}")
-    suspend fun getSongById(
+    suspend fun getSongByPath(
         @Path("id") id: String
     ): SongDetailResponse
 
-    /* ---------------- ARTIST ---------------- */
 
-    @GET("artists/{id}")
-    suspend fun getArtist(
-        @Path("id") id: String
-    ): ArtistResponse
+    // ALBUMS
+    @GET("albums")
+    suspend fun getAlbumById(
+        @Query("id") id: String
+    ): ApiResponse<ApiAlbum>
+
+
+    // PLAYLISTS
+    @GET("playlists")
+    suspend fun getPlaylistById(
+        @Query("id") id: String
+    ): ApiResponse<ApiPlaylist>
+
+
+    // ARTISTS
+    @GET("artists")
+    suspend fun getArtistById(
+        @Query("id") id: String
+    ): ArtistDetailResponse
 
     @GET("artists/{id}/songs")
     suspend fun getArtistSongs(
         @Path("id") id: String
-    ): SongListResponse
+    ): ArtistSongsResponse
 
     @GET("artists/{id}/albums")
     suspend fun getArtistAlbums(
         @Path("id") id: String
-    ): AlbumListResponse
-
-    /* ---------------- ALBUM / PLAYLIST ---------------- */
-
-    @GET("albums")
-    suspend fun getAlbum(
-        @Query("id") id: String
-    ): AlbumDetailResponse
-
-    @GET("playlists")
-    suspend fun getPlaylist(
-        @Query("id") id: String
-    ): PlaylistDetailResponse
+    ): ArtistAlbumsResponse
 }

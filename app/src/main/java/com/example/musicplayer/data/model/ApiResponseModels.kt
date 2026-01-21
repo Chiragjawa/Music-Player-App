@@ -1,38 +1,34 @@
 package com.example.musicplayer.data.model
 
-data class SearchResponse(
-    val success: Boolean,
-    val data: SearchData
+import com.google.gson.annotations.SerializedName
+
+/* ---------- COMMON WRAPPERS ---------- */
+
+data class ApiResponse<T>(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: T
 )
 
-data class SearchData(
-    val results: List<ApiSong>
+/* ---------- SEARCH RESPONSES ---------- */
+
+data class SearchResultWrapper<T>(
+    @SerializedName("total") val total: Int?,
+    @SerializedName("start") val start: Int?,
+    @SerializedName("results") val results: List<T>
 )
 
-data class ApiSong(
-    val id: String,
-    val name: String,
-    val duration: Int,
-    val image: List<Image>,
-    val downloadUrl: List<DownloadUrl>,
-    val artists: Artists
-)
+/* ---------- SONG DETAIL RESPONSE ---------- */
 
-data class Image(
-    val quality: String,
-    val url: String
-)
+typealias SongDetailResponse = ApiResponse<List<ApiSong>>
 
-data class DownloadUrl(
-    val quality: String,
-    val url: String
-)
+/* ---------- SEARCH SONG RESPONSE ---------- */
 
-data class Artists(
-    val primary: List<PrimaryArtist>
-)
+typealias SearchSongsResponse = ApiResponse<SearchResultWrapper<ApiSong>>
 
-data class PrimaryArtist(
-    val id: String,
-    val name: String
-)
+/* ---------- SEARCH ALBUM RESPONSE ---------- */
+
+typealias SearchAlbumsResponse = ApiResponse<SearchResultWrapper<ApiAlbum>>
+
+/* ---------- SEARCH PLAYLIST RESPONSE ---------- */
+
+typealias SearchPlaylistsResponse = ApiResponse<SearchResultWrapper<ApiPlaylist>>

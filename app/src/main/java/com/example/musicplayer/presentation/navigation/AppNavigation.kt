@@ -1,84 +1,35 @@
 package com.example.musicplayer.presentation.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import com.example.musicplayer.presentation.screens.ArtistScreen
-import com.example.musicplayer.presentation.screens.PlayerScreen
-import com.example.musicplayer.presentation.screens.SearchScreen
-import com.example.musicplayer.viewmodel.ArtistViewModel
+import androidx.navigation.compose.*
+import com.example.musicplayer.presentation.screens.*
 import com.example.musicplayer.viewmodel.MusicPlayerViewModel
-import com.example.musicplayer.viewmodel.SearchViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun AppNavigation() {
-
     val navController = rememberNavController()
+    val playerViewModel: MusicPlayerViewModel = hiltViewModel()
 
-    NavHost(
-        navController = navController,
-        startDestination = "search"
-    ) {
-
-        /* ---------------- SEARCH ---------------- */
+    NavHost(navController, startDestination = "search") {
 
         composable("search") {
-            val searchViewModel: SearchViewModel = hiltViewModel()
-            val playerViewModel: MusicPlayerViewModel = hiltViewModel()
-
             SearchScreen(
-                searchViewModel = searchViewModel,
-                playerViewModel = playerViewModel,
-                onNavigateToPlayer = {
-                    navController.navigate("player")
+                onNavigateToArtist = {
+                    navController.navigate("artist/$it")
                 },
-                onNavigateToArtist = { artistName ->
-                    navController.navigate("artist/$artistName")
+                onPlaySong = { song, queue ->
+                    playerViewModel.playSong(song, queue)
                 }
             )
         }
 
-        /* ---------------- PLAYER ---------------- */
-
-        composable("player") {
-            val playerViewModel: MusicPlayerViewModel = hiltViewModel()
-
-            PlayerScreen(
-                playerViewModel = playerViewModel,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        /* ---------------- ARTIST ---------------- */
-
-        composable(
-            route = "artist/{artistName}",
-            arguments = listOf(
-                navArgument("artistName") {
-                    type = NavType.StringType
-                }
-            )
-        ) {
-            val artistViewModel: ArtistViewModel = hiltViewModel()
-            val playerViewModel: MusicPlayerViewModel = hiltViewModel()
-
+        composable("artist/{artistName}") {
             val artistName = it.arguments?.getString("artistName") ?: ""
-
             ArtistScreen(
                 artistName = artistName,
-                artistViewModel = artistViewModel,
-                playerViewModel = playerViewModel,
-                onBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToPlayer = {
-                    navController.navigate("player")
+                onPlaySong = { song, queue ->
+                    playerViewModel.playSong(song, queue)
                 }
             )
         }

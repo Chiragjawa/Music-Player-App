@@ -1,7 +1,5 @@
 package com.example.musicplayer.presentation.components
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,7 +11,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,12 +26,13 @@ import com.example.musicplayer.data.model.Song
 fun SongItem(
     song: Song,
     isPlaying: Boolean = false,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onArtistClick: (String) -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .clickable { onClick() },   // 🔊 play song
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isPlaying) Color(0xFF1E3A1E) else Color(0xFF1E1E1E)
@@ -49,6 +47,7 @@ fun SongItem(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             // Album Art
             AsyncImage(
                 model = song.imageUrl,
@@ -64,6 +63,8 @@ fun SongItem(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
+
+                // Song name (NOT clickable)
                 Text(
                     text = song.name,
                     color = Color.White,
@@ -75,12 +76,17 @@ fun SongItem(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
+                // ✅ ARTIST NAME (CLICKABLE)
                 Text(
                     text = song.artists,
-                    color = Color(0xFFB3B3B3),
+                    color = Color(0xFF1DB954),
                     fontSize = 14.sp,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.clickable {
+                        // Take first artist only
+                        onArtistClick(song.artists.split(",").first().trim())
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -92,7 +98,7 @@ fun SongItem(
                 )
             }
 
-            // Play Icon
+            // Play / Pause Icon (visual only)
             Icon(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = "Play",

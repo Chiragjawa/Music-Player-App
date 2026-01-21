@@ -8,7 +8,6 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.session.MediaSession
 import com.example.musicplayer.data.model.Song
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,15 +27,12 @@ data class PlayerState(
     val queue: List<Song> = emptyList(),
     val currentIndex: Int = -1
 )
+
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @HiltViewModel
 class MusicPlayerViewModel @Inject constructor(
     application: Application
 ) : AndroidViewModel(application) {
-    private val audioAttributes = AudioAttributes.Builder()
-        .setUsage(C.USAGE_MEDIA)
-        .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)  // Note: AUDIO_CONTENT_TYPE_MUSIC
-        .build()
 
     val player: ExoPlayer = ExoPlayer.Builder(application)
         .setAudioAttributes(
@@ -55,21 +51,6 @@ class MusicPlayerViewModel @Inject constructor(
     private val _playerState = MutableStateFlow(PlayerState())
     val playerState: StateFlow<PlayerState> = _playerState.asStateFlow()
 
-    private val playerListener = object : Player.Listener {
-
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-            _playerState.value = _playerState.value.copy(isPlaying = isPlaying)
-        }
-
-        override fun onPlaybackStateChanged(playbackState: Int) {
-            if (playbackState == Player.STATE_READY) {
-                _playerState.value = _playerState.value.copy(
-                    duration = player.duration
-                )
-            }
-        }
-    }
-
     init {
         mediaSession = MediaSession.Builder(application, player).build()
 
@@ -85,10 +66,7 @@ class MusicPlayerViewModel @Inject constructor(
                     )
                 }
             }
-        })
 
-        // ADD THE NEW LISTENER HERE
-        player.addListener(object : Player.Listener {
             override fun onPositionDiscontinuity(
                 oldPosition: Player.PositionInfo,
                 newPosition: Player.PositionInfo,
@@ -103,7 +81,6 @@ class MusicPlayerViewModel @Inject constructor(
         startProgressUpdate()
     }
 
-
     private fun startProgressUpdate() {
         viewModelScope.launch {
             while (isActive) {
@@ -113,29 +90,27 @@ class MusicPlayerViewModel @Inject constructor(
                         duration = player.duration
                     )
                 }
-                delay(50)   // smoother updates
+                delay(50)
             }
         }
     }
 
-
+    /**
+     * ✅ FIXED: Now properly uses the queue parameter
+     * When called from search results or artist screen, replaces entire queue
+     */
     fun playSong(song: Song, queue: List<Song> = listOf(song)) {
-
         player.stop()
         player.clearMediaItems()
 
-        val currentQueue = _playerState.value.queue.toMutableList()
+        // Find the song's position in the provided queue
+        val index = queue.indexOfFirst { it.id == song.id }
 
-        if (!currentQueue.any { it.id == song.id }) {
-            currentQueue.add(song)
-        }
-
-        val index = currentQueue.indexOfFirst { it.id == song.id }
-
+        // Replace entire queue with new one
         _playerState.value = _playerState.value.copy(
             currentSong = song,
-            queue = currentQueue,
-            currentIndex = index
+            queue = queue,
+            currentIndex = if (index >= 0) index else 0
         )
 
         val mediaItem = MediaItem.Builder()
@@ -165,7 +140,25 @@ class MusicPlayerViewModel @Inject constructor(
 
         if (state.currentIndex < state.queue.size - 1) {
             val nextSong = state.queue[state.currentIndex + 1]
-            playSong(nextSong, state.queue)
+
+            // Update state first
+            _playerState.value = state.copy(
+                currentSong = nextSong,
+                currentIndex = state.currentIndex + 1
+            )
+
+            // Then update player
+            player.stop()
+            player.clearMediaItems()
+
+            val mediaItem = MediaItem.Builder()
+                .setUri(nextSong.streamUrl)
+                .setMediaId(nextSong.id)
+                .build()
+
+            player.setMediaItem(mediaItem)
+            player.prepare()
+            player.play()
         }
     }
 
@@ -174,36 +167,76 @@ class MusicPlayerViewModel @Inject constructor(
 
         if (state.currentIndex > 0) {
             val previousSong = state.queue[state.currentIndex - 1]
-            playSong(previousSong, state.queue)
+
+            _playerState.value = state.copy(
+                currentSong = previousSong,
+                currentIndex = state.currentIndex - 1
+            )
+
+            player.stop()
+            player.clearMediaItems()
+
+            val mediaItem = MediaItem.Builder()
+                .setUri(previousSong.streamUrl)
+                .setMediaId(previousSong.id)
+                .build()
+
+            player.setMediaItem(mediaItem)
+            player.prepare()
+            player.play()
         }
     }
 
+    /**
+     * Add a song to the end of current queue (optional feature)
+     */
     fun addToQueue(song: Song) {
         val currentQueue = _playerState.value.queue.toMutableList()
 
         if (!currentQueue.any { it.id == song.id }) {
             currentQueue.add(song)
-
             _playerState.value = _playerState.value.copy(queue = currentQueue)
         }
     }
 
+    /**
+     * Remove a song from queue
+     */
     fun removeFromQueue(song: Song) {
         val currentQueue = _playerState.value.queue.toMutableList()
+        val currentIndex = _playerState.value.currentIndex
 
-        currentQueue.removeAll { it.id == song.id }
+        val removedIndex = currentQueue.indexOfFirst { it.id == song.id }
+        if (removedIndex == -1) return
 
-        _playerState.value = _playerState.value.copy(queue = currentQueue)
+        currentQueue.removeAt(removedIndex)
+
+        // Adjust current index if necessary
+        val newIndex = when {
+            removedIndex < currentIndex -> currentIndex - 1
+            removedIndex == currentIndex -> -1 // Current song removed
+            else -> currentIndex
+        }
+
+        _playerState.value = _playerState.value.copy(
+            queue = currentQueue,
+            currentIndex = newIndex
+        )
+
+        // If current song was removed, stop playback
+        if (newIndex == -1) {
+            player.stop()
+            _playerState.value = _playerState.value.copy(
+                currentSong = null,
+                isPlaying = false
+            )
+        }
     }
 
     override fun onCleared() {
         super.onCleared()
-
-        player.removeListener(playerListener)
-
         mediaSession?.release()
         mediaSession = null
-
         player.release()
     }
 }

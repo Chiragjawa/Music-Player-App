@@ -1,82 +1,81 @@
 package com.example.musicplayer.data.model
 
-/* ---------------- SONG DETAIL ---------------- */
+import com.google.gson.annotations.SerializedName
 
-data class SongDetailResponse(
-    val success: Boolean,
-    val data: List<ApiSong>
+/* ---------- SONG ---------- */
+
+data class ApiSong(
+    @SerializedName("id") val id: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("duration") val duration: Int?,
+    @SerializedName("language") val language: String?,
+    @SerializedName("playCount") val playCount: Long?,
+    @SerializedName("artists") val artists: ApiArtists,
+    @SerializedName("image") val image: List<ApiImage>,
+    @SerializedName("downloadUrl") val downloadUrl: List<ApiDownload>
 )
 
-/* ---------------- ALBUM SEARCH ---------------- */
+/* ---------- ARTISTS ---------- */
 
-data class AlbumSearchResponse(
-    val success: Boolean,
-    val data: AlbumSearchData
+data class ApiArtists(
+    @SerializedName("primary") val primary: List<ApiArtist>
 )
 
-data class AlbumSearchData(
-    val results: List<Album>
+data class ApiArtist(
+    @SerializedName("id") val id: String?,
+    @SerializedName("name") val name: String
 )
 
-/* ---------------- PLAYLIST SEARCH ---------------- */
+/* ---------- ALBUM ---------- */
 
-data class PlaylistSearchResponse(
-    val success: Boolean,
-    val data: PlaylistSearchData
+data class ApiAlbum(
+    @SerializedName("id") val id: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("year") val year: String?,
+    @SerializedName("language") val language: String?,
+    @SerializedName("songCount") val songCount: Int?,
+    @SerializedName("image") val image: List<ApiImage>,
+    @SerializedName("artists") val artists: ApiArtists?
 )
 
-data class PlaylistSearchData(
-    val results: List<Playlist>
+/* ---------- PLAYLIST ---------- */
+
+data class ApiPlaylist(
+    @SerializedName("id") val id: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("songCount") val songCount: Int?,
+    @SerializedName("image") val image: List<ApiImage>
 )
 
-/* ---------------- ALBUM / PLAYLIST DETAILS ---------------- */
+/* ---------- ARTIST DETAILS ---------- */
 
-data class AlbumDetailResponse(
-    val success: Boolean,
-    val data: Album
+data class ArtistDetailResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: ApiArtistDetail
 )
 
-data class PlaylistDetailResponse(
-    val success: Boolean,
-    val data: Playlist
+data class ApiArtistDetail(
+    @SerializedName("id") val id: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("image") val image: List<ApiImage>
 )
 
-/* ---------------- BASE MODELS ---------------- */
+/* ---------- ARTIST SONGS / ALBUMS ---------- */
 
-data class Album(
-    val id: String,
-    val name: String,
-    val image: List<Image>
+typealias ArtistSongsResponse =
+        ApiResponse<SearchResultWrapper<ApiSong>>
+
+typealias ArtistAlbumsResponse =
+        ApiResponse<SearchResultWrapper<ApiAlbum>>
+
+/* ---------- SHARED ---------- */
+
+data class ApiImage(
+    @SerializedName("quality") val quality: String,
+    @SerializedName("url") val url: String
 )
 
-data class Playlist(
-    val id: String,
-    val name: String,
-    val image: List<Image>
-)
-/* ---------------- ARTIST DETAIL ---------------- */
-
-data class ArtistResponse(
-    val success: Boolean,
-    val data: Artist
-)
-
-data class Artist(
-    val id: String,
-    val name: String,
-    val image: List<Image>
-)
-
-/* ---------------- ARTIST SONGS ---------------- */
-
-data class SongListResponse(
-    val success: Boolean,
-    val data: List<ApiSong>
-)
-
-/* ---------------- ARTIST ALBUMS ---------------- */
-
-data class AlbumListResponse(
-    val success: Boolean,
-    val data: List<Album>
+data class ApiDownload(
+    @SerializedName("quality") val quality: String,
+    @SerializedName("url") val url: String
 )

@@ -1,4 +1,4 @@
-package com.example.musicplayer.viewmodel
+package com.example.musicplayer.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -6,7 +6,6 @@ import com.example.musicplayer.data.model.Song
 import com.example.musicplayer.data.repository.MusicRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -17,79 +16,64 @@ class SearchViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _songs = MutableStateFlow<List<Song>>(emptyList())
-    val songs: StateFlow<List<Song>> = _songs.asStateFlow()
+    val songs = _songs.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    private val _randomSongs = MutableStateFlow<List<Song>>(emptyList())
+    val randomSongs = _randomSongs.asStateFlow()
 
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error.asStateFlow()
+    private val _artistResults = MutableStateFlow<List<String>>(emptyList())
+    val artistResults = _artistResults.asStateFlow()
 
-    private val _noResults = MutableStateFlow(false)
-    val noResults: StateFlow<Boolean> = _noResults.asStateFlow()
+    private val _albumResults = MutableStateFlow<List<String>>(emptyList())
+    val albumResults = _albumResults.asStateFlow()
 
-    private val _lastQuery = MutableStateFlow("")
-    val lastQuery: StateFlow<String> = _lastQuery.asStateFlow()
-
-    fun search(query: String) {
-        val trimmedQuery = query.trim()
-
-        if (trimmedQuery.isBlank()) {
-            clearSearch()
-            return
-        }
-
-        // Don't search if same query
-        if (trimmedQuery == _lastQuery.value && _songs.value.isNotEmpty()) {
-            return
-        }
-
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            _noResults.value = false
-            _lastQuery.value = trimmedQuery
-
-            try {
-                val result = repository.searchSongs(trimmedQuery)
-
-                result.onSuccess { songList ->
-                    _songs.value = songList
-                    _noResults.value = songList.isEmpty()
-
-                    if (songList.isEmpty()) {
-                        _error.value = null // Clear error when no results
-                    }
-                }.onFailure { exception ->
-                    _error.value = exception.message ?: "Search failed"
-                    _songs.value = emptyList()
-                    _noResults.value = false
-                }
-
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Unknown error occurred"
-                _songs.value = emptyList()
-                _noResults.value = false
-            } finally {
-                _isLoading.value = false
-            }
-        }
+    init {
+        loadRandomSongs()
     }
 
-    /**
-     * Clear all search results and state
-     */
-    fun clearSearch() {
+    fun clearResults() {
         _songs.value = emptyList()
-        _error.value = null
-        _noResults.value = false
-        _lastQuery.value = ""
+        _artistResults.value = emptyList()
+        _albumResults.value = emptyList()
     }
 
-    /**
-     * Reset error state
-     */
-    fun clearError() {
-        _error.value = null
+    private fun loadRandomSongs() {
+        viewModelScope.launch {
+            _randomSongs.value = repository
+                .searchSongs("popular")
+                .shuffled()
+                .take(10)
+        }
+    }
+
+    fun searchSongs(query: String) {
+        viewModelScope.launch {
+            _songs.value =
+                if (query.isBlank()) emptyList()
+                else repository.searchSongs(query)
+        }
+    }
+
+    fun searchArtists(query: String) {
+        viewModelScope.launch {
+            if (query.isBlank()) {
+                _artistResults.value = emptyList()
+                return@launch
+            }
+
+            val songs = repository.searchSongs(query)
+            _artistResults.value =
+                songs.flatMap { it.artists.split(",") }
+                    .map { it.trim() }
+                    .distinct()
+        }
+    }
+
+    fun searchAlbums(query: String) {
+        viewModelScope.launch {
+            _albumResults.value =
+                if (query.isBlank()) emptyList()
+                else listOf(query) // placeholder until album API wired
+        }
     }
 }

@@ -8,9 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,9 +18,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.LinearEasing
 import coil.compose.AsyncImage
 import com.example.musicplayer.viewmodel.MusicPlayerViewModel
 import java.util.Locale
@@ -35,6 +30,10 @@ fun PlayerScreen(
 ) {
     val playerState by playerViewModel.playerState.collectAsState()
     val song = playerState.currentSong
+
+    // ✅ Track user interaction state
+    var isSeeking by remember { mutableStateOf(false) }
+    var seekPosition by remember { mutableStateOf(0f) }
 
     if (song == null) {
         Box(
@@ -125,23 +124,26 @@ fun PlayerScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Progress Bar
-            val rawProgress = if (playerState.duration > 0) {
-                (playerState.currentPosition.toFloat() / playerState.duration.toFloat()).coerceIn(0f, 1f)
-            } else 0f
-
-            val animatedProgress by animateFloatAsState(
-                targetValue = rawProgress,
-                animationSpec = tween(durationMillis = 100, easing = LinearEasing),
-                label = "progress"
-            )
-
+            // ✅ FIXED Progress Bar - only seeks on user release
+            val displayProgress = if (isSeeking) {
+                seekPosition
+            } else {
+                if (playerState.duration > 0) {
+                    (playerState.currentPosition.toFloat() / playerState.duration.toFloat())
+                        .coerceIn(0f, 1f)
+                } else 0f
+            }
 
             Slider(
-                value = animatedProgress,
-                onValueChange = { newProgress ->
-                    val newPosition = (newProgress * playerState.duration).toLong()
+                value = displayProgress,
+                onValueChange = { newValue ->
+                    isSeeking = true
+                    seekPosition = newValue
+                },
+                onValueChangeFinished = {
+                    val newPosition = (seekPosition * playerState.duration).toLong()
                     playerViewModel.seekTo(newPosition)
+                    isSeeking = false
                 },
                 colors = SliderDefaults.colors(
                     thumbColor = Color(0xFF1DB954),
@@ -157,7 +159,11 @@ fun PlayerScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = formatTime(playerState.currentPosition),
+                    text = if (isSeeking) {
+                        formatTime((seekPosition * playerState.duration).toLong())
+                    } else {
+                        formatTime(playerState.currentPosition)
+                    },
                     color = Color(0xFFB3B3B3),
                     fontSize = 12.sp
                 )
