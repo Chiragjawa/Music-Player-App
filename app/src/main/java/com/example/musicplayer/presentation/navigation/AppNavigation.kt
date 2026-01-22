@@ -11,7 +11,6 @@ import androidx.navigation.navArgument
 import com.example.musicplayer.presentation.screens.*
 import com.example.musicplayer.presentation.theme.MusicPlayerTheme
 import com.example.musicplayer.viewmodel.MusicPlayerViewModel
-import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun AppNavigation() {

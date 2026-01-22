@@ -268,6 +268,14 @@ fun SearchScreen(
                     }
                     Spacer(Modifier.height(16.dp))
                 }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Spacer(Modifier.height(16.dp))
 
                 // ✨ CONTENT WITH ANIMATIONS
                 val bottomPadding = if (playerState?.value?.currentSong != null) 156.dp else 96.dp
