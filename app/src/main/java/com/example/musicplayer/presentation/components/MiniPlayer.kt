@@ -29,6 +29,8 @@ import com.example.musicplayer.presentation.theme.*
 fun MiniPlayer(
     song: Song,
     isPlaying: Boolean,
+    currentPosition: Long = 0L,
+    duration: Long = 1L,
     onPlayPause: () -> Unit,
     onClick: () -> Unit,
     isDarkTheme: Boolean = true
@@ -67,7 +69,7 @@ fun MiniPlayer(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp)
+            .height(88.dp)
             .shadow(12.dp, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
             .clickable { onClick() },
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
@@ -80,75 +82,100 @@ fun MiniPlayer(
                 .fillMaxSize()
                 .background(backgroundColor)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.fillMaxSize()
             ) {
-
-                // ✨ ALBUM ART
-                Card(
-                    modifier = Modifier.size(52.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    AsyncImage(
-                        model = song.imageUrl,
-                        contentDescription = "Album Art",
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // ✨ SONG INFO
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = song.name,
-                        color = textPrimary,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Text(
-                        text = song.artists,
-                        color = textSecondary,
-                        fontSize = 13.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // ✨ PLAY/PAUSE BUTTON
-                Surface(
+                Row(
                     modifier = Modifier
-                        .size(if (isPlaying) 48.dp * pulseScale else 48.dp)
-                        .clip(CircleShape)
-                        .clickable { onPlayPause() },
-                    color = PrimaryOrange,
-                    shadowElevation = 6.dp,
-                    shape = CircleShape
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center
+
+                    // ✨ ALBUM ART
+                    Card(
+                        modifier = Modifier.size(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = if (isPlaying) "Pause" else "Play",
-                            tint = Color.White,
-                            modifier = Modifier.size(28.dp)
+                        AsyncImage(
+                            model = song.imageUrl,
+                            contentDescription = "Album Art",
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // ✨ SONG INFO
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = song.name,
+                            color = textPrimary,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = song.artists,
+                            color = textSecondary,
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // ✨ PLAY/PAUSE BUTTON
+                    Surface(
+                        modifier = Modifier
+                            .size(if (isPlaying) 48.dp * pulseScale else 48.dp)
+                            .clip(CircleShape)
+                            .clickable { onPlayPause() },
+                        color = PrimaryOrange,
+                        shadowElevation = 6.dp,
+                        shape = CircleShape
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = if (isPlaying) "Pause" else "Play",
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
                 }
+
+                // ✨ SEEK BAR (Synced with playback)
+                val progress = if (duration > 0) {
+                    (currentPosition.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+                } else {
+                    0f
+                }
+
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .padding(horizontal = 0.dp),
+                    color = PrimaryOrange,
+                    trackColor = if (isDarkTheme)
+                        Color(0xFF404040)
+                    else
+                        Color(0xFFE0E0E0)
+                )
             }
         }
     }

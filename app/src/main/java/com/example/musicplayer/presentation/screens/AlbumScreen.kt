@@ -231,6 +231,7 @@ fun AlbumScreen(
                             song = song,
                             onClick = { onPlaySong(song, songs) },
                             onArtistClick = {},
+                            onAddToQueue = { playerViewModel?.addToQueue(song) },  // ADD THIS LINE
                             isDarkTheme = isDarkTheme
                         )
                         Spacer(Modifier.height(8.dp))
@@ -284,6 +285,8 @@ fun AlbumScreen(
                 com.example.musicplayer.presentation.components.MiniPlayer(
                     song = song,
                     isPlaying = playerState.value.isPlaying,
+                    currentPosition = playerState.value.currentPosition,  // Add .value
+                    duration = playerState.value.duration,
                     onPlayPause = { vm.playPause() },
                     onClick = onNavigateToPlayer,
                     isDarkTheme = isDarkTheme

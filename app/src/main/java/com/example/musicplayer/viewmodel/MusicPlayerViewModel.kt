@@ -62,6 +62,7 @@ class MusicPlayerViewModel @Inject constructor(
     val playerState: StateFlow<PlayerState> = _playerState.asStateFlow()
 
     private var musicService: MusicPlaybackService? = null
+
     private var serviceBound = false
 
     private lateinit var audioFocusManager: AudioFocusManager

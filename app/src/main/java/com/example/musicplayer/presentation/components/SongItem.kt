@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
@@ -28,6 +29,7 @@ fun SongItem(
     isPlaying: Boolean = false,
     onClick: () -> Unit,
     onArtistClick: (String) -> Unit,
+    onAddToQueue: () -> Unit,
     isDarkTheme: Boolean = true
 ) {
     var isPressed by remember { mutableStateOf(false) }
@@ -123,6 +125,21 @@ fun SongItem(
             }
 
             Spacer(modifier = Modifier.width(8.dp))
+
+            // ✨ ADD TO QUEUE BUTTON
+            IconButton(
+                onClick = onAddToQueue,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add to Queue",
+                    tint = if (isDarkTheme) Color(0xFF999999) else Color(0xFF666666),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(4.dp))
 
             // ✨ ANIMATED PLAY ICON
             Surface(

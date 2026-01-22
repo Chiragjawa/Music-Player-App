@@ -48,6 +48,7 @@ fun SearchScreen(
 ) {
     var query by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf(SearchTab.SUGGESTED) }
+    var hasSearched by remember { mutableStateOf(false) }
 
     val songs by viewModel.songs.collectAsState()
     val randomSongs by viewModel.randomSongs.collectAsState()
@@ -70,6 +71,7 @@ fun SearchScreen(
     fun performSearch() {
         if (query.isBlank()) return
 
+        hasSearched = true
         when (selectedTab) {
             SearchTab.SONGS -> viewModel.searchSongs(query)
             SearchTab.ARTISTS -> viewModel.searchArtists(query)
@@ -85,6 +87,7 @@ fun SearchScreen(
     val textSecondary = if (isDarkTheme) TextSecondaryDark else TextSecondaryLight
 
     val playerState = playerViewModel?.playerState?.collectAsState()
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -176,6 +179,7 @@ fun SearchScreen(
                             onClick = {
                                 selectedTab = tab
                                 query = ""
+                                hasSearched = false
                                 viewModel.clearResults()
                             },
                             modifier = Modifier.padding(vertical = 8.dp)
@@ -193,51 +197,75 @@ fun SearchScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                // ✨ MODERN SEARCH BAR
+                // ✨ MODERN SEARCH BAR WITH SEARCH BUTTON
                 if (selectedTab != SearchTab.SUGGESTED) {
-                    OutlinedTextField(
-                        value = query,
-                        onValueChange = { query = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .scale(searchBarScale),
-                        placeholder = {
-                            Text(
-                                "Search ${selectedTab.name.lowercase()}...",
-                                color = textSecondary
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Search,
-                                contentDescription = null,
-                                tint = PrimaryOrange
-                            )
-                        },
-                        trailingIcon = {
-                            if (query.isNotEmpty()) {
-                                IconButton(onClick = { query = "" }) {
-                                    Icon(
-                                        Icons.Default.Clear,
-                                        contentDescription = "Clear",
-                                        tint = textSecondary
-                                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = query,
+                            onValueChange = { query = it },
+                            modifier = Modifier
+                                .weight(1f)
+                                .scale(searchBarScale),
+                            placeholder = {
+                                Text(
+                                    "Search ${selectedTab.name.lowercase()}...",
+                                    color = textSecondary
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = null,
+                                    tint = PrimaryOrange
+                                )
+                            },
+                            trailingIcon = {
+                                if (query.isNotEmpty()) {
+                                    IconButton(onClick = {
+                                        query = ""
+                                        hasSearched = false
+                                    }) {
+                                        Icon(
+                                            Icons.Default.Clear,
+                                            contentDescription = "Clear",
+                                            tint = textSecondary
+                                        )
+                                    }
                                 }
-                            }
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PrimaryOrange,
-                            unfocusedBorderColor = if (isDarkTheme) Color(0xFF333333) else Color(0xFFE0E0E0),
-                            focusedContainerColor = surfaceColor,
-                            unfocusedContainerColor = surfaceColor,
-                            focusedTextColor = textPrimary,
-                            unfocusedTextColor = textPrimary
-                        ),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { performSearch() })
-                    )
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = PrimaryOrange,
+                                unfocusedBorderColor = if (isDarkTheme) Color(0xFF333333) else Color(0xFFE0E0E0),
+                                focusedContainerColor = surfaceColor,
+                                unfocusedContainerColor = surfaceColor,
+                                focusedTextColor = textPrimary,
+                                unfocusedTextColor = textPrimary
+                            ),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { performSearch() })
+                        )
+
+                        Button(
+                            onClick = { performSearch() },
+                            enabled = query.isNotBlank(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PrimaryOrange,
+                                contentColor = Color.White,
+                                disabledContainerColor = PrimaryOrange.copy(alpha = 0.5f),
+                                disabledContentColor = Color.White.copy(alpha = 0.5f)
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.height(56.dp)
+                        ) {
+                            Text("Search", fontWeight = FontWeight.Bold)
+                        }
+                    }
                     Spacer(Modifier.height(16.dp))
                 }
 
@@ -260,6 +288,7 @@ fun SearchScreen(
                                         song = song,
                                         onClick = { onPlaySong(song, randomSongs) },
                                         onArtistClick = {},
+                                        onAddToQueue = { playerViewModel?.addToQueue(song) },
                                         isDarkTheme = isDarkTheme
                                     )
                                 }
@@ -277,6 +306,7 @@ fun SearchScreen(
                                             song = song,
                                             onClick = { onPlaySong(song, songs) },
                                             onArtistClick = {},
+                                            onAddToQueue = { playerViewModel?.addToQueue(song) },
                                             isDarkTheme = isDarkTheme
                                         )
                                     }
@@ -303,7 +333,7 @@ fun SearchScreen(
                                         }
                                     }
                                 }
-                            } else if (query.isNotBlank() && !isLoading) {
+                            } else if (hasSearched && !isLoading) {
                                 item { NoResult(isDarkTheme) }
                             } else if (isLoading && songs.isEmpty()) {
                                 item {
@@ -350,7 +380,7 @@ fun SearchScreen(
                                         }
                                     }
                                 }
-                            } else if (query.isNotBlank() && !isLoading) {
+                            } else if (hasSearched && !isLoading) {
                                 item { NoResult(isDarkTheme) }
                             } else if (isLoading && artistResults.isEmpty()) {
                                 item {
@@ -397,7 +427,7 @@ fun SearchScreen(
                                         }
                                     }
                                 }
-                            } else if (query.isNotBlank() && !isLoading) {
+                            } else if (hasSearched && !isLoading) {
                                 item { NoResult(isDarkTheme) }
                             } else if (isLoading && albumResults.isEmpty()) {
                                 item {
@@ -429,6 +459,8 @@ fun SearchScreen(
                     com.example.musicplayer.presentation.components.MiniPlayer(
                         song = song,
                         isPlaying = playerState.value.isPlaying,
+                        currentPosition = playerState.value.currentPosition,  // ADD THIS
+                        duration = playerState.value.duration,
                         onPlayPause = { vm.playPause() },
                         onClick = onNavigateToPlayer,
                         isDarkTheme = isDarkTheme
