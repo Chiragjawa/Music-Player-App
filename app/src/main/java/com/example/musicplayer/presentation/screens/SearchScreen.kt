@@ -114,7 +114,7 @@ fun SearchScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "MyPlay",
+                            text = "Lokal Music Player",
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
