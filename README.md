@@ -3,7 +3,6 @@
 **Lokal Music Player** is a modern Android music streaming application built using **Kotlin**, **Jetpack Compose**, and **Media3 ExoPlayer**.
 The project focuses on **reliable background playback**, **persistent queue management**, and a **smooth, fully synchronized playback experience** between the mini player and the full player.
 
-This app is designed with clarity and correctness in mind, following modern Android best practices without unnecessary over-engineering.
 
 ---
 
@@ -81,24 +80,109 @@ This is achieved using **Media3 ExoPlayer**, **MediaSession**, and a **foregroun
 
 ---
 
-## 🏗 Architecture Overview
+## 🏗 Architecture Overview (Mapped to Project Files)
 
-The app follows a clean **MVVM (Model–View–ViewModel)** architecture with a clear separation of responsibilities.
-UI layers are kept stateless, while all business logic and playback control are handled by ViewModels.
+The app follows a clean **MVVM (Model–View–ViewModel)** architecture.
+Each layer has a clear responsibility, and all communication flows in one direction to keep the app predictable and easy to maintain.
 
-### High-Level Architecture
+---
 
-```
-Compose UI
-   ↓
-ViewModels (StateFlow)
-   ↓
-Repository
-   ↓
-Remote API
-```
+### 📱 UI Layer (Jetpack Compose)
 
-### Playback Architecture
+**Files involved:**
+
+* `SearchScreen.kt`
+* `AlbumScreen.kt`
+* `ArtistScreen.kt`
+* `PlayerScreen.kt`
+* `QueueScreen.kt`
+* `MiniPlayer.kt`
+* `SongItem.kt`
+* `AppNavigation.kt`
+
+**Responsibilities:**
+
+* Display UI and handle user interactions
+* Observe state exposed by ViewModels using **StateFlow**
+* Automatically recompose when state changes
+
+The UI only reacts to state and forwards user actions (play, pause, add to queue, reorder) to the ViewModels.
+
+---
+
+### 🧠 ViewModel Layer (Single Source of Truth)
+
+**Files involved:**
+
+* `SearchViewModel.kt`
+* `AlbumViewModel.kt`
+* `ArtistViewModel.kt`
+* `MusicPlayerViewModel.kt`
+
+**Responsibilities:**
+
+* Hold UI and playback state
+* Expose state using **StateFlow**
+* Coordinate between UI, repository, and playback layer
+
+#### `MusicPlayerViewModel.kt` (Core of the App)
+
+* Owns the **ExoPlayer** instance
+* Manages:
+
+  * Current song
+  * Playback state (play / pause)
+  * Seek position
+  * Playback queue (add / remove / reorder)
+* Exposes a unified `PlayerState` via `StateFlow`
+* Acts as the **single source of truth** for both the mini player and full player
+
+Other ViewModels (`SearchViewModel`, `AlbumViewModel`, `ArtistViewModel`):
+
+* Fetch and prepare data for UI
+* Never control playback directly
+
+---
+
+### 📦 Repository Layer
+
+**File involved:**
+
+* `MusicRepository.kt`
+
+**Responsibilities:**
+
+* Fetch real music data from the remote API
+* Convert API responses into domain models (`Song`, `Album`)
+* Keep ViewModels independent of networking logic
+
+---
+
+### 🌐 Remote Data Layer
+
+**Files involved:**
+
+* `SaavnApi.kt`
+* `ApiResponseModels.kt`
+* `ApiExtraResponses.kt`
+* `NetworkModule.kt`
+
+**Responsibilities:**
+
+* Define API endpoints using Retrofit
+* Handle network configuration and dependency injection
+* Communicate with the **JioSaavn REST API**
+
+---
+
+### 🎵 Playback & Background Audio Layer
+
+**Files involved:**
+
+* `MusicPlaybackService.kt`
+* `AudioFocusManager.kt`
+
+**Playback Flow:**
 
 ```
 MusicPlayerViewModel
@@ -107,78 +191,50 @@ ExoPlayer (Media3)
    ↓
 MediaSession
    ↓
-Foreground Service
+MusicPlaybackService (Foreground Service)
    ↓
-System Notification / Lock Screen
+Notification / Lock Screen
 ```
 
----
+**Responsibilities:**
 
-## 🧠 Architecture Explanation (In Simple Words)
+* `MusicPlaybackService.kt`
 
-### Compose UI
+  * Runs as a **foreground service**
+  * Keeps music playing when app is backgrounded
+  * Shows media controls on notification and lock screen
+* `AudioFocusManager.kt`
 
-* Contains screens such as Search, Player, Queue, and Mini Player
-* Displays data and reacts to state changes
-* Does not contain business or playback logic
-* Observes `StateFlow` exposed by ViewModels
+  * Handles audio focus changes (calls, other apps)
 
----
-
-### ViewModels
-
-* Act as the **single source of truth** for UI and playback state
-* Hold:
-
-  * Current song
-  * Playback status (play/pause)
-  * Queue and current index
-  * Seek position
-
-**MusicPlayerViewModel**
-
-* Owns the **ExoPlayer** instance
-* Handles play, pause, seek, next, and previous actions
-* Manages queue add, remove, and reorder operations
-* Exposes a unified `PlayerState` via **StateFlow**
-
-Other ViewModels (Search, Artist, Album):
-
-* Fetch data
-* Prepare UI-friendly state
-* Never directly control playback
+This ensures reliable playback even when the app is minimized or the screen is locked.
 
 ---
 
-### Repository Layer
+### 💾 Local Persistence Layer
 
-* `MusicRepository` handles all data operations
-* Fetches real music data from the remote API
-* Maps API responses to domain models
-* Keeps ViewModels independent of networking logic
+**File involved:**
 
----
+* `QueueDataStore.kt`
 
-### Playback & Background Service
+**Responsibilities:**
 
-* **ExoPlayer (Media3)** handles audio playback
-* **MediaSession** enables system-level media controls
-* **MusicPlaybackService** runs as a foreground service to:
-
-  * Keep music playing in the background
-  * Show playback controls in notifications and lock screen
-  * Forward media actions back to the ViewModel
-
-This ensures playback remains stable across lifecycle changes.
+* Persist playback queue and current song index
+* Restore queue state when the app restarts
+* Implemented using **Jetpack DataStore**
 
 ---
 
-### Local Persistence
+## ✅ Why This Architecture Works Well
 
-* Queue and current song index are saved using **Jetpack DataStore**
-* Queue is restored automatically when the app restarts
+* Clear separation of concerns
+* Single source of truth using `MusicPlayerViewModel`
+* Lifecycle-safe background playback
+* Fully synchronized mini and full player UI
+* Easy to explain, debug, and extend
 
 ---
+
 
 ## ⚠️ Assumptions & Trade-offs
 
@@ -192,5 +248,6 @@ This ensures playback remains stable across lifecycle changes.
 * Queue reordering is implemented using **move up / move down** buttons instead of drag-and-drop to keep interactions simple and predictable
 * Offline playback is not supported since the app relies on streaming APIs
 * If the currently playing song is removed from the queue, playback stops instead of automatically selecting the next song, ensuring explicit and predictable behavior
+
 
 
