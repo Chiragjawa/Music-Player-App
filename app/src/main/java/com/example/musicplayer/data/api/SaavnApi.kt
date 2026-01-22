@@ -11,12 +11,15 @@ interface SaavnApi {
     @GET("search/songs")
     suspend fun searchSongs(
         @Query("query") query: String,
+        @Query("page") page: Int = 0,
         @Query("limit") limit: Int = 20
     ): SearchSongsResponse
 
     @GET("search/albums")
     suspend fun searchAlbums(
-        @Query("query") query: String
+        @Query("query") query: String,
+        @Query("page") page: Int = 0,
+        @Query("limit") limit: Int = 20
     ): SearchAlbumsResponse
 
     @GET("search/playlists")

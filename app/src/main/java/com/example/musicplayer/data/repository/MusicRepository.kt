@@ -9,8 +9,8 @@ class MusicRepository @Inject constructor(
     private val api: SaavnApi
 ) {
 
-    suspend fun searchSongs(query: String): List<Song> {
-        val response = api.searchSongs(query, limit = 30)
+    suspend fun searchSongs(query: String, page: Int = 0, limit: Int = 20): List<Song> {
+        val response = api.searchSongs(query, page = page, limit = limit)
 
         return response.data.results.mapNotNull { apiSong ->
             val streamUrl = apiSong.downloadUrl
@@ -55,8 +55,8 @@ class MusicRepository @Inject constructor(
         }
     }
 
-    suspend fun searchAlbums(query: String): List<Album> {
-        val response = api.searchAlbums(query)
+    suspend fun searchAlbums(query: String, page: Int = 0, limit: Int = 20): List<Album> {
+        val response = api.searchAlbums(query, page = page, limit = limit)
         return response.data.results.map { apiAlbum ->
             Album(
                 id = apiAlbum.id,

@@ -1,94 +1,103 @@
 package com.example.musicplayer.presentation.navigation
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.navigation.compose.*
-import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.musicplayer.presentation.components.MiniPlayer
+import android.net.Uri
+import androidx.compose.runtime.*
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.musicplayer.presentation.screens.*
+import com.example.musicplayer.presentation.theme.MusicPlayerTheme
 import com.example.musicplayer.viewmodel.MusicPlayerViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+
+    // ✨ THEME STATE - Persists across navigation
+    var isDarkTheme by remember { mutableStateOf(true) }
+
+    // ✨ SHARED PLAYER VIEWMODEL - Single source of truth
     val playerViewModel: MusicPlayerViewModel = hiltViewModel()
     val playerState by playerViewModel.playerState.collectAsState()
 
-    // Track current route to hide MiniPlayer on PlayerScreen
-    val currentBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = currentBackStackEntry?.destination?.route
+    MusicPlayerTheme(darkTheme = isDarkTheme) {
 
-    Scaffold(
-        bottomBar = {
-            // Show MiniPlayer only when there's a current song AND not on player screen
-            if (playerState.currentSong != null && currentRoute != "player") {
-                MiniPlayer(
-                    song = playerState.currentSong!!,
-                    isPlaying = playerState.isPlaying,
-                    onPlayPause = { playerViewModel.playPause() },
-                    onClick = { navController.navigate("player") }
-                )
-            }
-        }
-    ) { paddingValues ->
-        NavHost(
-            navController,
-            startDestination = "search",
-            modifier = Modifier.padding(paddingValues)
-        ) {
+        NavHost(navController, startDestination = "search") {
+
             composable("search") {
                 SearchScreen(
-                    onNavigateToArtist = {
-                        navController.navigate("artist/$it")
+                    onNavigateToArtist = { artist ->
+                        navController.navigate("artist/${Uri.encode(artist)}")
                     },
-                    onNavigateToAlbum = {
-                        navController.navigate("album/$it")
+                    onNavigateToAlbum = { album ->
+                        navController.navigate("album/${Uri.encode(album)}")
                     },
                     onPlaySong = { song, queue ->
                         playerViewModel.playSong(song, queue)
-                    }
+                    },
+                    isDarkTheme = isDarkTheme,
+                    onThemeToggle = { isDarkTheme = !isDarkTheme },
+                    playerViewModel = playerViewModel,
+                    onNavigateToPlayer = { navController.navigate("player") }
                 )
             }
 
-            composable("artist/{artistName}") {
-                val artistName = it.arguments?.getString("artistName") ?: ""
-                ArtistScreen(
-                    artistName = artistName,
-                    onPlaySong = { song, queue ->
-                        playerViewModel.playSong(song, queue)
-                    }
-                )
-            }
-
-            composable("album/{albumName}") {
-                val albumName = it.arguments?.getString("albumName") ?: ""
-                AlbumScreen(
-                    albumName = albumName,
-                    onPlaySong = { song, queue ->
-                        playerViewModel.playSong(song, queue)
-                    }
-                )
-            }
-
-            // Full Player Screen
             composable("player") {
                 PlayerScreen(
                     playerViewModel = playerViewModel,
                     onNavigateBack = { navController.popBackStack() },
-                    onNavigateToQueue = { navController.navigate("queue") }
+                    onNavigateToQueue = { navController.navigate("queue") },
+                    isDarkTheme = isDarkTheme
                 )
             }
 
-            // Queue Screen as dialog
-            dialog("queue") {
+            composable(
+                route = "artist/{artistName}",
+                arguments = listOf(navArgument("artistName") {
+                    type = NavType.StringType
+                })
+            ) {
+                val artistName = Uri.decode(it.arguments?.getString("artistName") ?: "")
+
+                ArtistScreen(
+                    artistName = artistName,
+                    onPlaySong = { song, queue ->
+                        playerViewModel.playSong(song, queue)
+                    },
+                    isDarkTheme = isDarkTheme,
+                    playerViewModel = playerViewModel,
+                    onNavigateToPlayer = { navController.navigate("player") }
+                )
+            }
+
+            composable(
+                route = "album/{albumName}",
+                arguments = listOf(navArgument("albumName") {
+                    type = NavType.StringType
+                })
+            ) {
+                val albumName = Uri.decode(it.arguments?.getString("albumName") ?: "")
+
+                AlbumScreen(
+                    albumName = albumName,
+                    onPlaySong = { song, queue ->
+                        playerViewModel.playSong(song, queue)
+                    },
+                    isDarkTheme = isDarkTheme,
+                    playerViewModel = playerViewModel,
+                    onNavigateToPlayer = { navController.navigate("player") }
+                )
+            }
+
+            composable("queue") {
                 QueueScreen(
                     playerViewModel = playerViewModel,
-                    onDismiss = { navController.popBackStack() }
+                    onDismiss = { navController.popBackStack() },
+                    isDarkTheme = isDarkTheme
                 )
             }
         }

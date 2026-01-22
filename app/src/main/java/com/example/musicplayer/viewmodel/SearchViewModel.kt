@@ -34,6 +34,26 @@ class SearchViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
+    private val _hasMoreSongs = MutableStateFlow(true)
+    val hasMoreSongs = _hasMoreSongs.asStateFlow()
+
+    private val _hasMoreArtists = MutableStateFlow(true)
+    val hasMoreArtists = _hasMoreArtists.asStateFlow()
+
+    private val _hasMoreAlbums = MutableStateFlow(true)
+    val hasMoreAlbums = _hasMoreAlbums.asStateFlow()
+
+    private var currentSongPage = 0
+    private var currentArtistPage = 0
+    private var currentAlbumPage = 0
+    private var lastSongQuery = ""
+    private var lastArtistQuery = ""
+    private var lastAlbumQuery = ""
+
+    companion object {
+        const val PAGE_SIZE = 20
+    }
+
     init {
         loadRandomSongs()
     }
@@ -43,6 +63,15 @@ class SearchViewModel @Inject constructor(
         _artistResults.value = emptyList()
         _albumResults.value = emptyList()
         _errorMessage.value = null
+        currentSongPage = 0
+        currentArtistPage = 0
+        currentAlbumPage = 0
+        lastSongQuery = ""
+        lastArtistQuery = ""
+        lastAlbumQuery = ""
+        _hasMoreSongs.value = true
+        _hasMoreArtists.value = true
+        _hasMoreAlbums.value = true
     }
 
     fun clearError() {
@@ -62,7 +91,7 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    fun searchSongs(query: String) {
+    fun searchSongs(query: String, loadMore: Boolean = false) {
         viewModelScope.launch {
             if (query.isBlank()) {
                 _songs.value = emptyList()
@@ -72,17 +101,35 @@ class SearchViewModel @Inject constructor(
             try {
                 _isLoading.value = true
                 _errorMessage.value = null
-                _songs.value = repository.searchSongs(query)
+
+                if (!loadMore || query != lastSongQuery) {
+                    currentSongPage = 0
+                    lastSongQuery = query
+                    _hasMoreSongs.value = true
+                }
+
+                val newSongs = repository.searchSongs(query, page = currentSongPage, limit = PAGE_SIZE)
+
+                if (loadMore && currentSongPage > 0) {
+                    _songs.value = _songs.value + newSongs
+                } else {
+                    _songs.value = newSongs
+                }
+
+                _hasMoreSongs.value = newSongs.size >= PAGE_SIZE
+                if (newSongs.isNotEmpty()) {
+                    currentSongPage++
+                }
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to search songs: ${e.message}"
-                _songs.value = emptyList()
+                if (!loadMore) _songs.value = emptyList()
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    fun searchArtists(query: String) {
+    fun searchArtists(query: String, loadMore: Boolean = false) {
         viewModelScope.launch {
             if (query.isBlank()) {
                 _artistResults.value = emptyList()
@@ -92,21 +139,41 @@ class SearchViewModel @Inject constructor(
             try {
                 _isLoading.value = true
                 _errorMessage.value = null
-                val songs = repository.searchSongs(query)
-                _artistResults.value =
-                    songs.flatMap { it.artists.split(",") }
-                        .map { it.trim() }
-                        .distinct()
+
+                if (!loadMore || query != lastArtistQuery) {
+                    currentArtistPage = 0
+                    lastArtistQuery = query
+                    _hasMoreArtists.value = true
+                }
+
+                val songs = repository.searchSongs(query, page = currentArtistPage, limit = PAGE_SIZE * 2)
+                val newArtists = songs.flatMap { it.artists.split(",") }
+                    .map { it.trim() }
+                    .distinct()
+                    .take(PAGE_SIZE)
+
+                if (loadMore && currentArtistPage > 0) {
+                    val existingArtists = _artistResults.value.toSet()
+                    val uniqueNewArtists = newArtists.filterNot { it in existingArtists }
+                    _artistResults.value = _artistResults.value + uniqueNewArtists
+                } else {
+                    _artistResults.value = newArtists
+                }
+
+                _hasMoreArtists.value = newArtists.size >= PAGE_SIZE
+                if (newArtists.isNotEmpty()) {
+                    currentArtistPage++
+                }
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to search artists: ${e.message}"
-                _artistResults.value = emptyList()
+                if (!loadMore) _artistResults.value = emptyList()
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    fun searchAlbums(query: String) {
+    fun searchAlbums(query: String, loadMore: Boolean = false) {
         viewModelScope.launch {
             if (query.isBlank()) {
                 _albumResults.value = emptyList()
@@ -116,10 +183,28 @@ class SearchViewModel @Inject constructor(
             try {
                 _isLoading.value = true
                 _errorMessage.value = null
-                _albumResults.value = repository.searchAlbums(query)
+
+                if (!loadMore || query != lastAlbumQuery) {
+                    currentAlbumPage = 0
+                    lastAlbumQuery = query
+                    _hasMoreAlbums.value = true
+                }
+
+                val newAlbums = repository.searchAlbums(query, page = currentAlbumPage, limit = PAGE_SIZE)
+
+                if (loadMore && currentAlbumPage > 0) {
+                    _albumResults.value = _albumResults.value + newAlbums
+                } else {
+                    _albumResults.value = newAlbums
+                }
+
+                _hasMoreAlbums.value = newAlbums.size >= PAGE_SIZE
+                if (newAlbums.isNotEmpty()) {
+                    currentAlbumPage++
+                }
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to search albums: ${e.message}"
-                _albumResults.value = emptyList()
+                if (!loadMore) _albumResults.value = emptyList()
             } finally {
                 _isLoading.value = false
             }

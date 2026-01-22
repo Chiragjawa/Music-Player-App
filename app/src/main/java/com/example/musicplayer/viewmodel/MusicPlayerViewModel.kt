@@ -220,6 +220,7 @@ class MusicPlayerViewModel @Inject constructor(
         val mediaMetadata = MediaMetadata.Builder()
             .setTitle(song.name)
             .setArtist(song.artists)
+            .setArtworkUri(android.net.Uri.parse(song.imageUrl))
             .build()
 
         val mediaItem = MediaItem.Builder()
@@ -268,6 +269,7 @@ class MusicPlayerViewModel @Inject constructor(
             val mediaMetadata = MediaMetadata.Builder()
                 .setTitle(nextSong.name)
                 .setArtist(nextSong.artists)
+                .setArtworkUri(android.net.Uri.parse(nextSong.imageUrl))
                 .build()
 
             val mediaItem = MediaItem.Builder()
@@ -303,6 +305,7 @@ class MusicPlayerViewModel @Inject constructor(
             val mediaMetadata = MediaMetadata.Builder()
                 .setTitle(previousSong.name)
                 .setArtist(previousSong.artists)
+                .setArtworkUri(android.net.Uri.parse(previousSong.imageUrl))
                 .build()
 
             val mediaItem = MediaItem.Builder()
