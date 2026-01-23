@@ -8,7 +8,7 @@ This app is designed with clarity and correctness in mind, following modern Andr
 ---
 
 ## ⚙️ Setup Instructions
-APK is in the Git Repo Itself.
+APK is in the Git Repo Itself.(Lokal-Music-Player-Latest.apk)
 
 1. Clone the repository:
 
@@ -247,3 +247,4 @@ This ensures reliable playback even when the app is minimized or the screen is l
 * Queue reordering is implemented using **move up / move down** buttons instead of drag-and-drop to keep interactions simple and predictable
 * Offline playback is not supported since the app relies on streaming APIs
 * If the currently playing song is removed from the queue, playback stops instead of automatically selecting the next song, ensuring explicit and predictable behavior
+
