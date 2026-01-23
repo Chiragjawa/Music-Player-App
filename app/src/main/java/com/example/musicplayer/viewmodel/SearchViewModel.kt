@@ -111,7 +111,10 @@ class SearchViewModel @Inject constructor(
                 val newSongs = repository.searchSongs(query, page = currentSongPage, limit = PAGE_SIZE)
 
                 if (loadMore && currentSongPage > 0) {
-                    _songs.value = _songs.value + newSongs
+                    // ✅ FIXED: Filter out duplicate songs based on ID
+                    val existingSongIds = _songs.value.map { it.id }.toSet()
+                    val uniqueNewSongs = newSongs.filterNot { it.id in existingSongIds }
+                    _songs.value = _songs.value + uniqueNewSongs
                 } else {
                     _songs.value = newSongs
                 }
@@ -193,7 +196,10 @@ class SearchViewModel @Inject constructor(
                 val newAlbums = repository.searchAlbums(query, page = currentAlbumPage, limit = PAGE_SIZE)
 
                 if (loadMore && currentAlbumPage > 0) {
-                    _albumResults.value = _albumResults.value + newAlbums
+                    // ✅ FIXED: Filter out duplicate albums based on ID
+                    val existingAlbumIds = _albumResults.value.map { it.id }.toSet()
+                    val uniqueNewAlbums = newAlbums.filterNot { it.id in existingAlbumIds }
+                    _albumResults.value = _albumResults.value + uniqueNewAlbums
                 } else {
                     _albumResults.value = newAlbums
                 }
