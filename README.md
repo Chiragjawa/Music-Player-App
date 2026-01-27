@@ -22,14 +22,14 @@ git clone https://github.com/Chiragjawa/Music-Player-App.git
 
 4. Run the app on an **emulator or physical device**
 
-> ✅ No mock data or API keys are required.
+> No mock data or API keys are required.
 > The app uses real API data.
 
 ---
 
-## ✅ Core Features
+## Core Features
 
-### 🎶 Queue Management
+### Queue Management
 
 * Add songs to the queue from **search**, **album**, or **artist** screens
 * Remove songs from the queue at any time
@@ -39,7 +39,7 @@ git clone https://github.com/Chiragjawa/Music-Player-App.git
 
 ---
 
-### 💾 Local Persistence
+### Local Persistence
 
 * Playback queue and current song index are stored locally
 * Queue state is automatically restored when the app is reopened
@@ -47,7 +47,7 @@ git clone https://github.com/Chiragjawa/Music-Player-App.git
 
 ---
 
-### ▶️ Background Playback
+### Background Playback
 
 Music continues playing when:
 
@@ -59,7 +59,7 @@ This is achieved using **Media3 ExoPlayer**, **MediaSession**, and a **foregroun
 
 ---
 
-### 🔄 State Synchronization
+### State Synchronization
 
 * The **mini player** and **full player** are always in sync
 * Both reflect the same song, play/pause state, seek position, and queue
@@ -68,7 +68,7 @@ This is achieved using **Media3 ExoPlayer**, **MediaSession**, and a **foregroun
 
 ---
 
-## 🛠 Technical Stack (Mandatory)
+## Technical Stack (Mandatory)
 
 * **Kotlin**
 * **Jetpack Compose**
@@ -80,14 +80,14 @@ This is achieved using **Media3 ExoPlayer**, **MediaSession**, and a **foregroun
 * **Retrofit** (real API data)
 * **Jetpack DataStore** (local persistence)
 
-## 🏗 Architecture Overview (Mapped to Project Files)
+## Architecture Overview (Mapped to Project Files)
 
 The app follows a clean **MVVM (Model–View–ViewModel)** architecture.
 Each layer has a clear responsibility, and all communication flows in one direction to keep the app predictable and easy to maintain.
 
 ---
 
-### 📱 UI Layer (Jetpack Compose)
+### UI Layer (Jetpack Compose)
 
 **Files involved:**
 
@@ -111,7 +111,7 @@ The UI only reacts to state and forwards user actions (play, pause, add to queue
 
 ---
 
-### 🧠 ViewModel Layer (Single Source of Truth)
+### ViewModel Layer (Single Source of Truth)
 
 **Files involved:**
 
@@ -145,7 +145,7 @@ Other ViewModels (`SearchViewModel`, `AlbumViewModel`, `ArtistViewModel`):
 
 ---
 
-### 📦 Repository Layer
+### Repository Layer
 
 **File involved:**
 
@@ -159,7 +159,7 @@ Other ViewModels (`SearchViewModel`, `AlbumViewModel`, `ArtistViewModel`):
 
 ---
 
-### 🌐 Remote Data Layer
+### Remote Data Layer
 
 **Files involved:**
 
@@ -176,7 +176,7 @@ Other ViewModels (`SearchViewModel`, `AlbumViewModel`, `ArtistViewModel`):
 
 ---
 
-### 🎵 Playback & Background Audio Layer
+### Playback & Background Audio Layer
 
 **Files involved:**
 
@@ -212,7 +212,7 @@ This ensures reliable playback even when the app is minimized or the screen is l
 
 ---
 
-### 💾 Local Persistence Layer
+### Local Persistence Layer
 
 **File involved:**
 
@@ -226,7 +226,7 @@ This ensures reliable playback even when the app is minimized or the screen is l
 
 ---
 
-## ✅ Why This Architecture Works Well
+## Why This Architecture Works Well
 
 * Clear separation of concerns
 * Single source of truth using `MusicPlayerViewModel`
@@ -235,7 +235,7 @@ This ensures reliable playback even when the app is minimized or the screen is l
 * Easy to explain, debug, and extend
 
 
-## ⚠️ Assumptions & Trade-offs
+## Assumptions & Trade-offs
 
 ### Assumptions
 
@@ -247,4 +247,5 @@ This ensures reliable playback even when the app is minimized or the screen is l
 * Queue reordering is implemented using **move up / move down** buttons instead of drag-and-drop to keep interactions simple and predictable
 * Offline playback is not supported since the app relies on streaming APIs
 * If the currently playing song is removed from the queue, playback stops instead of automatically selecting the next song, ensuring explicit and predictable behavior
+
 
